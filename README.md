@@ -5,8 +5,6 @@
 {
     "Lat": <latitude for house>,
     "Long": <longitude for house>,
-    "OffsetOpen": 60,
-    "OffsetClose": 90,
     "Devices": {
         "sejour": "<xAAL address>",
         "cuisine": "<xAAL address>",
@@ -20,7 +18,7 @@
             "Days" : ["Saturday", "Sunday", "Wednesday"],
             "Open" : [
                 {
-                    "Time": "sunrise",
+                    "Time": "sunrise+30",
                     "Shutters" : ["sejour", "cuisine", "bureau", "salleAManger"]
                 },
                 {
@@ -34,7 +32,7 @@
             ],
             "Close" : [
                 {
-                    "Time": "sunset",
+                    "Time": "sunset-5",
                     "Shutters" : ["sejour", "cuisine", "bureau", "ch1", "ch2"]
                 },
                 {
@@ -47,7 +45,7 @@
             "Days" : ["Monday", "Tuesday", "Thursday", "Friday"],
             "Open" : [
                 {
-                    "Time" : "sunrise",
+                    "Time" : "sunrise+30",
                     "Shutters" : ["sejour", "cuisine", "bureau", "ch2", "salleAManger"]
                 },
                 {
@@ -58,7 +56,7 @@
             "Close" : [
                 {
                     "Shutters" : ["sejour", "cuisine", "bureau", "ch1", "ch2"],
-                    "Time": "sunset"
+                    "Time": "sunset-5"
                 },
                 {
                     "Shutters" : ["salleAManger"],

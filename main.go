@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"regexp"
 	"runtime"
 	"time"
 
@@ -31,19 +32,11 @@ func setupDev(dev *device.Device) {
 
 const configFile = "scenario-shutters.json"
 
-var (
-	dev      *device.Device
-	riseTime string
-	setTime  string
-)
-
 var config = struct {
-	Lat         float64       `required:"true"`
-	Long        float64       `required:"true"`
-	OffsetOpen  time.Duration `default:"60"` // Minutes
-	OffsetClose time.Duration `default:"60"` // Minutes
-	Devices     map[string]string
-	Schedules   []struct {
+	Lat       float64 `required:"true"`
+	Long      float64 `required:"true"`
+	Devices   map[string]string
+	Schedules []struct {
 		Days  []string
 		Open  []timeAction
 		Close []timeAction
@@ -55,25 +48,28 @@ type timeAction struct {
 	Time     string `required:"true"`
 }
 
+var (
+	_dev       *device.Device
+	_validSun  = regexp.MustCompile(`^(sunrise|sunset)([\+\-]\d+)$`)
+	_validHour = regexp.MustCompile(`^(\d{1,2}):(\d{2})$`)
+	_rise      time.Time
+	_set       time.Time
+)
+
 func actionShutters(action string, shutters []string) {
-	engine.SendRequest(dev, shutters, action, nil)
+	engine.SendRequest(_dev, shutters, action, nil)
 }
 
 func schedule() {
 	var (
-		now         = time.Now()
-		weekday     = now.Weekday().String()
-		openOffset  = time.Minute * config.OffsetOpen
-		closeOffset = time.Minute * config.OffsetClose
+		now     = time.Now()
+		weekday = now.Weekday().String()
 	)
 
-	rise, set := sunrise.SunriseSunset(
+	_rise, _set = sunrise.SunriseSunset(
 		config.Lat, config.Long, // Navès
 		now.Year(), now.Month(), now.Day(), // date
 	)
-
-	riseTime = rise.Add(openOffset).Format("15:04")
-	setTime = set.Add(closeOffset).Format("15:04")
 
 	openCloseScheduler.Clear()
 
@@ -97,14 +93,23 @@ func setTimeAction(action string, details timeAction) {
 	// Compile list of devices
 	shutters := getShuttersAddresses(&details.Shutters)
 
-	// Set the opening time
-	if details.Time == "sunrise" {
-		details.Time = riseTime
-	}
+	if _validSun.MatchString(details.Time) {
+		var sunTime time.Time
 
-	// Set the closing time
-	if details.Time == "sunset" {
-		details.Time = setTime
+		res := _validSun.FindStringSubmatch(details.Time)
+
+		if res[1] == "sunrise" {
+			sunTime = _rise
+		} else {
+			sunTime = _set
+		}
+
+		offset, _ := time.ParseDuration(res[2] + "m")
+
+		details.Time = sunTime.Add(offset).Format("15:04")
+	} else if !_validHour.MatchString(details.Time) {
+		logger.Module("main").WithFields(logger.Fields{"time": details.Time, "shutter": details.Shutters}).Warn("Incorrect time set for shutters, ignoring")
+		return
 	}
 
 	logger.Module("main").WithFields(logger.Fields{"time": details.Time, "shutter": details.Shutters}).Infof("%s time set for shutters", action)
@@ -166,9 +171,9 @@ func main() {
 	go engine.Run()
 	defer engine.Stop()
 
-	dev = schemas.Basic("")
-	setupDev(dev)
-	engine.AddDevice(dev)
+	_dev = schemas.Basic("")
+	setupDev(_dev)
+	engine.AddDevice(_dev)
 
 	// Configure the schedulers
 	gocron.Every(1).Day().At("01:00").Do(schedule) // Compute open/close time, every morning
