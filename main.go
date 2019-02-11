@@ -32,7 +32,9 @@ func setupDev(dev *device.Device) {
 const configFile = "scenario-shutters.json"
 
 var (
-	dev *device.Device
+	dev      *device.Device
+	riseTime string
+	setTime  string
 )
 
 var config = struct {
@@ -42,14 +44,16 @@ var config = struct {
 	OffsetClose time.Duration `default:"60"` // Minutes
 	Devices     map[string]string
 	Schedules   []struct {
-		Days []string
-		Sets []struct {
-			Shutters  []string
-			OpenTime  string `required:"true"`
-			CloseTime string `required:"true"`
-		}
+		Days  []string
+		Open  []timeAction
+		Close []timeAction
 	}
 }{}
+
+type timeAction struct {
+	Shutters []string
+	Time     string `required:"true"`
+}
 
 func actionShutters(action string, shutters []string) {
 	engine.SendRequest(dev, shutters, action, nil)
@@ -68,8 +72,8 @@ func schedule() {
 		now.Year(), now.Month(), now.Day(), // date
 	)
 
-	riseTime := rise.Add(openOffset).Format("15:04")
-	setTime := set.Add(closeOffset).Format("15:04")
+	riseTime = rise.Add(openOffset).Format("15:04")
+	setTime = set.Add(closeOffset).Format("15:04")
 
 	openCloseScheduler.Clear()
 
@@ -78,35 +82,46 @@ func schedule() {
 			continue
 		}
 
-		for _, set := range schedule.Sets {
-			// Compile list of devices
-			shutters := []string{}
-			for _, shutter := range set.Shutters {
-				addr, ok := config.Devices[shutter]
-				if !ok {
-					logger.Module("main").WithField("shutter", shutter).Error("Shutter not found in the devices list")
-				} else {
-					shutters = append(shutters, addr)
-				}
-			}
+		for _, set := range schedule.Open {
+			setTimeAction("up", set)
+		}
 
-			// Set the opening time
-			if set.OpenTime == "sunrise" {
-				set.OpenTime = riseTime
-			}
-			logger.Module("main").WithFields(logger.Fields{"time": set.OpenTime, "shutter": set.Shutters}).Info("Opening time set for shutters")
-			openCloseScheduler.Every(1).Day().At(set.OpenTime).Do(actionShutters, "up", shutters)
-
-			// Set the closing time
-			if set.CloseTime == "sunset" {
-				set.CloseTime = setTime
-			}
-			logger.Module("main").WithFields(logger.Fields{"time": set.CloseTime, "shutter": set.Shutters}).Info("Closing time set for shutters")
-			openCloseScheduler.Every(1).Day().At(set.CloseTime).Do(actionShutters, "down", shutters)
-
+		for _, set := range schedule.Close {
+			setTimeAction("down", set)
 		}
 		return
 	}
+}
+
+func setTimeAction(action string, details timeAction) {
+	// Compile list of devices
+	shutters := getShuttersAddresses(&details.Shutters)
+
+	// Set the opening time
+	if details.Time == "sunrise" {
+		details.Time = riseTime
+	}
+
+	// Set the closing time
+	if details.Time == "sunset" {
+		details.Time = setTime
+	}
+
+	logger.Module("main").WithFields(logger.Fields{"time": details.Time, "shutter": details.Shutters}).Infof("%s time set for shutters", action)
+	openCloseScheduler.Every(1).Day().At(details.Time).Do(actionShutters, action, shutters)
+}
+
+func getShuttersAddresses(shutters *[]string) []string {
+	addresses := []string{}
+	for _, shutter := range *shutters {
+		addr, ok := config.Devices[shutter]
+		if !ok {
+			logger.Module("main").WithField("shutter", shutter).Error("Shutter not found in the devices list")
+		} else {
+			addresses = append(addresses, addr)
+		}
+	}
+	return addresses
 }
 
 var openCloseScheduler *gocron.Scheduler

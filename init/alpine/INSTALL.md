@@ -5,10 +5,10 @@ mkdir /var/log/eria
 `````
 
 ````
-rc-update add gateway-owm default
+rc-update add scenario-shutters default
 ````
 
 ````
-/etc/init.d/gateway-owm start
+/etc/init.d/scenario-shutters start
 ````
 

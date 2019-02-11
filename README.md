@@ -16,43 +16,53 @@
         "ch2": "<xAAL address>"
     },
     "Schedules": [
-            {
+        {
             "Days" : ["Saturday", "Sunday", "Wednesday"],
-            "Sets" : [
+            "Open" : [
                 {
-                    "Shutters" : ["sejour" "cuisine", "bureau"],
-                    "OpenTime" : "sunrise",
-                    "CloseTime": "sunset"
+                    "Time": "sunrise",
+                    "Shutters" : ["sejour", "cuisine", "bureau", "salleAManger"]
                 },
                 {
-                    "Shutters" : ["salleAManger"],
-                    "OpenTime" : "sunrise",
-                    "CloseTime": "23:00"
+                    "Time": "9:00",
+                    "Shutters" : ["ch2"]
                 },
                 {
-                    "Shutters" : ["ch1", "ch2"],
-                    "OpenTime" : "9:00",
-                    "CloseTime": "sunset"
+                    "Time" : "10:00",
+                    "Shutters" : ["ch1"]
+                }
+            ],
+            "Close" : [
+                {
+                    "Time": "sunset",
+                    "Shutters" : ["sejour", "cuisine", "bureau", "ch1", "ch2"]
+                },
+                {
+                    "Time": "23:00",
+                    "Shutters" : ["salleAManger"]
                 }
             ]
         },
         {
             "Days" : ["Monday", "Tuesday", "Thursday", "Friday"],
-            "Sets" : [
+            "Open" : [
                 {
-                    "Shutters" : ["sejour", "cuisine", "bureau", "ch2"],
-                    "OpenTime" : "sunrise",
-                    "CloseTime": "sunset"
+                    "Time" : "sunrise",
+                    "Shutters" : ["sejour", "cuisine", "bureau", "ch2", "salleAManger"]
+                },
+                {
+                    "Time" : "10:00",
+                    "Shutters" : ["ch1"]
+                }
+            ],
+            "Close" : [
+                {
+                    "Shutters" : ["sejour", "cuisine", "bureau", "ch1", "ch2"],
+                    "Time": "sunset"
                 },
                 {
                     "Shutters" : ["salleAManger"],
-                    "OpenTime" : "sunrise",
-                    "CloseTime": "23:00"
-                },
-                {
-                    "Shutters" : ["ch1"],
-                    "OpenTime" : "10:00",
-                    "CloseTime": "sunset"
+                    "Time": "23:00"
                 }
             ]
         }
