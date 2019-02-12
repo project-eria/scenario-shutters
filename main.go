@@ -7,20 +7,21 @@ import (
 	"os/signal"
 	"regexp"
 	"runtime"
+	"strconv"
 	"time"
 
 	configmanager "github.com/project-eria/config-manager"
 	"github.com/project-eria/logger"
 
 	"github.com/jasonlvhit/gocron"
-	sunrise "github.com/nathan-osman/go-sunrise"
+	"github.com/kelvins/sunrisesunset"
 	"github.com/project-eria/xaal-go/device"
 	"github.com/project-eria/xaal-go/engine"
 	"github.com/project-eria/xaal-go/schemas"
 )
 
 func version() string {
-	return fmt.Sprintf("0.0.2 (engine %s)", engine.Version())
+	return fmt.Sprintf("0.0.3 (engine %s)", engine.Version())
 }
 
 func setupDev(dev *device.Device) {
@@ -33,6 +34,7 @@ func setupDev(dev *device.Device) {
 const configFile = "scenario-shutters.json"
 
 var config = struct {
+	Timezone  string  `required:"true"`
 	Lat       float64 `required:"true"`
 	Long      float64 `required:"true"`
 	Devices   map[string]string
@@ -50,10 +52,11 @@ type timeAction struct {
 
 var (
 	_dev       *device.Device
-	_validSun  = regexp.MustCompile(`^(sunrise|sunset)([\+\-]\d+)$`)
+	_validSun  = regexp.MustCompile(`^(sunrise|sunset)([\+\-]\d+)?$`)
 	_validHour = regexp.MustCompile(`^(\d{1,2}):(\d{2})$`)
 	_rise      time.Time
 	_set       time.Time
+	_location  *time.Location
 )
 
 func actionShutters(action string, shutters []string) {
@@ -64,12 +67,31 @@ func schedule() {
 	var (
 		now     = time.Now()
 		weekday = now.Weekday().String()
+		offset  float64
+		err     error
 	)
 
-	_rise, _set = sunrise.SunriseSunset(
-		config.Lat, config.Long, // Navès
-		now.Year(), now.Month(), now.Day(), // date
-	)
+	tzOffset := now.In(_location).Format("-07") // Get the timezone offset based on the timezone
+
+	offset, err = strconv.ParseFloat(tzOffset, 64)
+	if err != nil {
+		logger.Module("main").Error(err)
+		return
+	}
+
+	p := sunrisesunset.Parameters{
+		Latitude:  config.Lat,
+		Longitude: config.Long,
+		UtcOffset: offset,
+		Date:      now,
+	}
+
+	// Calculate the sunrise and sunset times
+	_rise, _set, err = p.GetSunriseSunset()
+	if err != nil {
+		logger.Module("main").Error(err)
+		return
+	}
 
 	openCloseScheduler.Clear()
 
@@ -104,9 +126,12 @@ func setTimeAction(action string, details timeAction) {
 			sunTime = _set
 		}
 
-		offset, _ := time.ParseDuration(res[2] + "m")
+		if res[2] != "" {
+			offset, _ := time.ParseDuration(res[2] + "m")
+			sunTime = sunTime.Add(offset)
+		}
+		details.Time = sunTime.Format("15:04")
 
-		details.Time = sunTime.Add(offset).Format("15:04")
 	} else if !_validHour.MatchString(details.Time) {
 		logger.Module("main").WithFields(logger.Fields{"time": details.Time, "shutter": details.Shutters}).Warn("Incorrect time set for shutters, ignoring")
 		return
@@ -164,6 +189,8 @@ func main() {
 		logger.Module("main").Fatal(err)
 	}
 	defer cm.Close()
+
+	_location, _ = time.LoadLocation(config.Timezone)
 
 	// xAAL engine starting
 	engine.Init()

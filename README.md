@@ -3,6 +3,7 @@
 ## Configuration file (scenario-shutters.json)
 ````
 {
+    "Timezone": "Europe/Paris",
     "Lat": <latitude for house>,
     "Long": <longitude for house>,
     "Devices": {
@@ -18,7 +19,7 @@
             "Days" : ["Saturday", "Sunday", "Wednesday"],
             "Open" : [
                 {
-                    "Time": "sunrise+30",
+                    "Time": "sunrise+10",
                     "Shutters" : ["sejour", "cuisine", "bureau", "salleAManger"]
                 },
                 {
