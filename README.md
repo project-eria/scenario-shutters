@@ -3,7 +3,6 @@
 ## Configuration file (scenario-shutters.json)
 ````
 {
-    "Timezone": "Europe/Paris",
     "Lat": <latitude for house>,
     "Long": <longitude for house>,
     "Devices": {

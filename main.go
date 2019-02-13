@@ -34,7 +34,6 @@ func setupDev(dev *device.Device) {
 const configFile = "scenario-shutters.json"
 
 var config = struct {
-	Timezone  string  `required:"true"`
 	Lat       float64 `required:"true"`
 	Long      float64 `required:"true"`
 	Devices   map[string]string
@@ -70,31 +69,25 @@ func schedule() {
 		offset  float64
 		err     error
 	)
-
-	tzOffset := now.In(_location).Format("-07") // Get the timezone offset based on the timezone
-
+	tzOffset := now.Format("-07") // Get the timezone offset
 	offset, err = strconv.ParseFloat(tzOffset, 64)
 	if err != nil {
 		logger.Module("main").Error(err)
 		return
 	}
-
 	p := sunrisesunset.Parameters{
 		Latitude:  config.Lat,
 		Longitude: config.Long,
 		UtcOffset: offset,
 		Date:      now,
 	}
-
 	// Calculate the sunrise and sunset times
 	_rise, _set, err = p.GetSunriseSunset()
 	if err != nil {
 		logger.Module("main").Error(err)
 		return
 	}
-
 	openCloseScheduler.Clear()
-
 	for _, schedule := range config.Schedules {
 		if !include(schedule.Days, weekday) {
 			continue
@@ -189,9 +182,12 @@ func main() {
 		logger.Module("main").Fatal(err)
 	}
 	defer cm.Close()
-
-	_location, _ = time.LoadLocation(config.Timezone)
-
+	/*
+		_location, err = time.LoadLocation(config.Timezone)
+		if err != nil {
+			logger.Module("main").WithField("timezone", config.Timezone).Fatal(err)
+		}
+	*/
 	// xAAL engine starting
 	engine.Init()
 
@@ -218,6 +214,7 @@ func main() {
 			schedule()
 		}
 	}()
+	fmt.Println("D")
 
 	// Set up channel on which to send signal notifications.
 	// We must use a buffered channel or risk missing the signal
@@ -228,4 +225,5 @@ func main() {
 	// Block until keyboard interrupt is received.
 	<-c
 	runtime.Goexit()
+	fmt.Println("E")
 }
