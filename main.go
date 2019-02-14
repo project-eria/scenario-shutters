@@ -21,7 +21,7 @@ import (
 )
 
 func version() string {
-	return fmt.Sprintf("0.0.3 (engine %s)", engine.Version())
+	return fmt.Sprintf("0.0.3 - %s (engine commit %s)", engine.Timestamp, engine.GitCommit)
 }
 
 func setupDev(dev *device.Device) {
