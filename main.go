@@ -209,7 +209,6 @@ func main() {
 			schedule()
 		}
 	}()
-	fmt.Println("D")
 
 	// Set up channel on which to send signal notifications.
 	// We must use a buffered channel or risk missing the signal
@@ -220,5 +219,4 @@ func main() {
 	// Block until keyboard interrupt is received.
 	<-c
 	runtime.Goexit()
-	fmt.Println("E")
 }
