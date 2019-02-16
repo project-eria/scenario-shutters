@@ -182,21 +182,16 @@ func main() {
 		logger.Module("main").Fatal(err)
 	}
 	defer cm.Close()
-	/*
-		_location, err = time.LoadLocation(config.Timezone)
-		if err != nil {
-			logger.Module("main").WithField("timezone", config.Timezone).Fatal(err)
-		}
-	*/
+
 	// xAAL engine starting
 	engine.Init()
-
-	go engine.Run()
-	defer engine.Stop()
 
 	_dev = schemas.Basic("")
 	setupDev(_dev)
 	engine.AddDevice(_dev)
+
+	go engine.Run()
+	defer engine.Stop()
 
 	// Configure the schedulers
 	gocron.Every(1).Day().At("01:00").Do(schedule) // Compute open/close time, every morning
