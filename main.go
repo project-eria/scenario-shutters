@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/project-eria/xaal-go/utils"
+
 	configmanager "github.com/project-eria/config-manager"
 	"github.com/project-eria/logger"
 
@@ -89,7 +91,7 @@ func schedule() {
 	}
 	openCloseScheduler.Clear()
 	for _, schedule := range config.Schedules {
-		if !include(schedule.Days, weekday) {
+		if _, in := utils.SliceContains(&schedule.Days, weekday); !in {
 			continue
 		}
 
