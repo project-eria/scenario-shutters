@@ -9,7 +9,7 @@ import (
 	"github.com/jasonlvhit/gocron"
 	"github.com/kelvins/sunrisesunset"
 	"github.com/project-eria/eria-base"
-	"github.com/project-eria/logger"
+	logger "github.com/project-eria/eria-logger"
 	"github.com/project-eria/xaal-go"
 	"github.com/project-eria/xaal-go/device"
 	"github.com/project-eria/xaal-go/schemas"
