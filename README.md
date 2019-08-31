@@ -13,9 +13,19 @@
         "ch1": "<xAAL address>",
         "ch2": "<xAAL address>"
     },
+    "Events" : [
+        {
+            "Label": "away",
+            "Value": false
+        },
+        {
+            "Label": "holiday",
+            "Value": true
+        }
+    ],
     "Schedules": [
         {
-            "Days" : ["Saturday", "Sunday", "Wednesday"],
+            "Days" : ["Saturday", "Sunday", "Wednesday", "holiday"],
             "Open" : [
                 {
                     "Time": "sunrise+10",
@@ -61,6 +71,21 @@
                 {
                     "Shutters" : ["salleAManger"],
                     "Time": "23:00"
+                }
+            ]
+        },
+        {
+            "Days" : ["away"],
+            "Open" : [
+                {
+                    "Time": "sunrise-20",
+                    "Shutters" : ["sejour", "salleAManger", "cuisine", "bureau", "ch1", "ch2"]
+                }
+            ],
+            "Close" : [
+                {
+                    "Time": "sunset+30",
+                    "Shutters" : ["sejour", "salleAManger", "cuisine", "bureau", "ch1", "ch2"]
                 }
             ]
         }
